@@ -43,7 +43,7 @@ func NewRedisStorage(addr string, ttlSeconds ...int64) *RedisStorage {
 	return &RedisStorage{client: client, ttlSeconds: ttl}
 }
 
-func (s *RedisStorage) Shorten(url string) string {
+func (s *RedisStorage) Shorten(url string, ttlSeconds int64) string {
 	code := shortener.GenerateCode()
 	ctx := context.Background()
 	for {
@@ -53,7 +53,11 @@ func (s *RedisStorage) Shorten(url string) string {
 		}
 		code = shortener.GenerateCode()
 	}
-	s.client.Set(ctx, code, url, time.Duration(s.ttlSeconds)*time.Second)
+	ttl := ttlSeconds
+	if ttl <= 0 {
+		ttl = s.ttlSeconds
+	}
+	s.client.Set(ctx, code, url, time.Duration(ttl)*time.Second)
 	return code
 }
 
